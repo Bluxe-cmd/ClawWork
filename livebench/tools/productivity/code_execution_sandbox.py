@@ -53,9 +53,14 @@ class SandboxExecutionResult:
 
 
 class SandboxBackend:
-    """Provider backend interface."""
+    """Provider backend interface.  Subclasses MUST set provider_name."""
 
-    provider_name: str = "unknown"
+    @property
+    def provider_name(self) -> str:
+        raise NotImplementedError(
+            f"{type(self).__name__} must define 'provider_name' "
+            "(e.g. provider_name = 'e2b')"
+        )
 
     def ensure_started(self, timeout: int = 3600) -> None:
         raise NotImplementedError

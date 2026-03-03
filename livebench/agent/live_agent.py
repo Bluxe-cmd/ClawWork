@@ -274,14 +274,33 @@ class LiveAgent:
         copied_files = []
         missing_files = []
         sandbox_remote_paths = []
-        sandbox_provider = "unknown"
-        
+
+        # Resolve sandbox provider before uploading anything.
+        from livebench.tools.productivity.code_execution_sandbox import (
+            upload_task_reference_files,
+            get_session_sandbox_provider,
+        )
+        try:
+            sandbox_provider = get_session_sandbox_provider()
+        except Exception as e:
+            self.logger.error(
+                "Failed to resolve sandbox provider — cannot upload reference files",
+                context={
+                    "task_id": task.get('task_id'),
+                    "date": date,
+                    "error": str(e),
+                    "error_type": type(e).__name__,
+                },
+                print_console=True
+            )
+            raise
+
         for src_path in ref_file_paths:
             if os.path.exists(src_path):
                 # Copy file to sandbox, preserving filename
                 filename = os.path.basename(src_path)
                 dest_path = os.path.join(sandbox_dir, filename)
-                
+
                 try:
                     shutil.copy2(src_path, dest_path)
                     copied_files.append(filename)
@@ -290,30 +309,34 @@ class LiveAgent:
                         context={"src": src_path, "dest": dest_path},
                         print_console=False
                     )
-                    
-                    # Upload to sandbox for execute_code access
-                    try:
-                        from livebench.tools.productivity.code_execution_sandbox import (
-                            upload_task_reference_files,
-                            get_session_sandbox_provider,
-                        )
-                        remote_paths = upload_task_reference_files([dest_path])
-                        if remote_paths:
-                            sandbox_remote_paths.extend(remote_paths)
-                            sandbox_provider = get_session_sandbox_provider()
-                    except Exception as e:
-                        self.logger.warning(
-                            f"Failed to upload {filename} to task sandbox: {str(e)}",
-                            context={"file": filename},
-                            print_console=False
-                        )
-                    
                 except Exception as e:
                     self.logger.warning(
                         f"Failed to copy reference file: {filename}",
                         context={"src": src_path, "error": str(e)},
                         print_console=False
                     )
+                    continue
+
+                # Upload to sandbox for execute_code access.
+                try:
+                    remote_paths = upload_task_reference_files([dest_path])
+                    if remote_paths:
+                        sandbox_remote_paths.extend(remote_paths)
+                except Exception as e:
+                    self.logger.error(
+                        f"Failed to upload reference file '{filename}' to {sandbox_provider} sandbox",
+                        context={
+                            "file": filename,
+                            "dest_path": dest_path,
+                            "sandbox_provider": sandbox_provider,
+                            "task_id": task.get('task_id'),
+                            "date": date,
+                            "error": str(e),
+                            "error_type": type(e).__name__,
+                        },
+                        print_console=True
+                    )
+                    raise
             else:
                 missing_files.append(src_path)
                 self.logger.warning(
