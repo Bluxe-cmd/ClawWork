@@ -89,27 +89,6 @@ def _load_task_completions_by_task_id(agent_dir: Path) -> dict:
     return by_task_id
 
 
-def _load_task_completions_by_date(agent_dir: Path) -> dict:
-    """Load task_completions.jsonl, summing wall_clock_seconds per date."""
-    completions_file = agent_dir / "economic" / "task_completions.jsonl"
-    by_date: dict = {}
-    if not completions_file.exists():
-        return by_date
-    with open(completions_file, 'r') as f:
-        for line in f:
-            line = line.strip()
-            if not line:
-                continue
-            try:
-                entry = json.loads(line)
-                date = entry.get("date")
-                secs = entry.get("wall_clock_seconds")
-                if date and secs is not None:
-                    by_date[date] = by_date.get(date, 0.0) + float(secs)
-            except json.JSONDecodeError:
-                pass
-    return by_date
-
 
 # Active WebSocket connections
 active_connections: List[WebSocket] = []
@@ -549,7 +528,6 @@ async def get_leaderboard():
 
         # Load task completions (authoritative source) — used for wall-clock and task count
         task_completions_by_task_id = _load_task_completions_by_task_id(agent_dir)
-        task_completions_by_date = _load_task_completions_by_date(agent_dir)
 
         # Strip balance history to essential fields, exclude initialization
         stripped_history = []
