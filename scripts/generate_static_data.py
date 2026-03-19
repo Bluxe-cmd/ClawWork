@@ -74,16 +74,6 @@ def load_task_completions_by_task_id(agent_dir: Path) -> dict:
     }
 
 
-def load_task_completions_by_date(agent_dir: Path) -> dict:
-    """Load task_completions.jsonl, summing wall_clock_seconds per date."""
-    by_date: dict = {}
-    for e in read_jsonl(agent_dir / "economic" / "task_completions.jsonl"):
-        date = e.get("date")
-        secs = e.get("wall_clock_seconds")
-        if date and secs is not None:
-            by_date[date] = by_date.get(date, 0.0) + float(secs)
-    return by_date
-
 
 # ── /data/agents.json ────────────────────────────────────────────────────────
 def gen_agents():
@@ -127,13 +117,11 @@ def gen_leaderboard():
 
         # Authoritative sources from task_completions.jsonl
         tc_by_task_id = load_task_completions_by_task_id(agent_dir)
-        tc_by_date    = load_task_completions_by_date(agent_dir)
 
         stripped_history = [
             {
                 "date": e.get("date"),
                 "balance": e.get("balance", 0),
-                "wall_clock_seconds": tc_by_date.get(e.get("date")),
             }
             for e in balance_history
             if e.get("date") != "initialization"

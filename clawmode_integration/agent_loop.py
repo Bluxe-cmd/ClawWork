@@ -102,7 +102,7 @@ class ClawWorkAgentLoop(AgentLoop):
         # Check for /clawwork command
         content = (msg.content or "").strip()
         if content.lower().startswith("/clawwork"):
-            return await self._handle_clawwork(msg, content, session_key=session_key)
+            return await self._handle_clawwork(msg, content, session_key=session_key, on_progress=on_progress)
 
         # Regular message — standard economic tracking
         ts = msg.timestamp.strftime("%Y%m%d_%H%M%S")

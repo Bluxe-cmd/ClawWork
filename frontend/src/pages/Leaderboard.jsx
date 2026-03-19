@@ -326,8 +326,6 @@ const Leaderboard = ({ hiddenAgents = new Set() }) => {
     return result
   }, [chartData, visibleData])
 
-  const lastDate = chartData[chartData.length - 1]?.date
-
   const handleSort = (key) => {
     if (sortKey === key) setSortAsc(!sortAsc)
     else { setSortKey(key); setSortAsc(false) }
